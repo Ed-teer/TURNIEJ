@@ -14,6 +14,47 @@ const system = {
     }
 };
 
+const JSONBIN_ID = '67ff95358561e97a5000cbb8';
+const JSONBIN_API_KEY = '$2a$10$R9Xds/kGp2j227ZmP4AUjuFMDBShwrbpEOImJs7IKcud9btQmEZRO';
+
+async function loadPlayersFromJsonBin() {
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
+            headers: {
+                'X-Master-Key': JSONBIN_API_KEY
+            }
+        });
+        const data = await res.json();
+        system.playerPool = data.record.players || [];
+        updatePlayerPool();
+        updatePlayerCount();
+        console.log("Wczytano graczy z JSONBin");
+    } catch (e) {
+        console.error("Błąd ładowania z JSONBin:", e);
+    }
+}
+
+async function savePlayersToJsonBin() {
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY
+            },
+            body: JSON.stringify({
+                players: system.playerPool
+            })
+        });
+        console.log("Zapisano graczy do JSONBin");
+    } catch (e) {
+        console.error("Błąd zapisu do JSONBin:", e);
+    }
+}
+
+
+
+
 // Elementy DOM
 const playerPoolEl = document.getElementById('playerPool');
 const tournamentPlayersEl = document.getElementById('tournamentPlayers');
@@ -98,12 +139,14 @@ function addToPlayerPool() {
         return;
     }
     
-    system.playerPool.push(name);
+//    system.playerPool.push(name);
+	system.playerPool.push({ name: name });
     nameInput.value = "";
     
     updatePlayerPool();
-    saveToLocalStorage();
+  //  saveToLocalStorage();
     updatePlayerCount();
+	 savePlayersToJsonBin();
 }
 
 function updateTournamentPlayersList() {
@@ -1016,11 +1059,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Inicjalizacja widoku
-    updatePlayerPool();
-    updatePlayerCount();
-    
-	loadFromLocalStorage();
-
-    console.log("System został zainicjalizowany"); // Debug
+   window.addEventListener("load", async function () {
+    await loadPlayersFromJsonBin();
+    console.log("System został zainicjalizowany");
 });
 
