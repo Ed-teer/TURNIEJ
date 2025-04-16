@@ -165,7 +165,7 @@ function updateTournamentPlayersList() {
         const playerElement = document.createElement('div');
         playerElement.className = 'player-item';
         playerElement.innerHTML = `
-            <span>${player}</span>
+            <span>${player.name}</span>
             <button class="warning" onclick="removeFromTournament(${index})">Usuń</button>
         `;
         container.appendChild(playerElement);
