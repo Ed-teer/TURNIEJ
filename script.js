@@ -113,7 +113,7 @@ window.addToPlayerPool = function() {
     nameInput.value = "";
     
     updatePlayerPool();
-    savePlayersToJsonBin();
+    await savePlayersToJsonBin();
     updatePlayerCount();
 };
 
@@ -155,8 +155,9 @@ function addToPlayerPool() {
     system.playerPool.push(name);
     nameInput.value = "";
     
-    updatePlayerPool();
-    savePlayersToJsonBin();
+    //updatePlayerPool();
+	await loadPlayersFromJsonBin();
+   await savePlayersToJsonBin();
     updatePlayerCount();
 }
 
@@ -246,7 +247,7 @@ function removeFromPool(index) {
     
     system.playerPool.splice(index, 1);
     updatePlayerPool();
-    savePlayersToJsonBin();
+    await savePlayersToJsonBin();
     updatePlayerCount();
 }
 
@@ -263,7 +264,7 @@ function toggleTournamentPlayer(poolIndex) {
     updateTournamentPlayersList(); // Teraz ta funkcja istnieje
     updateTournamentPlayerCount();
     startBtnEl.disabled = system.tournament.players.length < 2;
-    savePlayersToJsonBin();
+    await savePlayersToJsonBin();
 }
 
 // Zarządzanie turniejem
@@ -1041,8 +1042,8 @@ function updateTournamentPlayerCount() {
     document.getElementById('startBtn').addEventListener('click', startTournament);
     
 	document.getElementById('addPlayerBtn').addEventListener('click', addToPlayerPool);
-    loadPlayersFromJsonBin();
-    updatePlayerPool();
+    await loadPlayersFromJsonBin();
+   // updatePlayerPool();
     updatePlayerCount();
 })
 
@@ -1070,9 +1071,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Inicjalizacja widoku
-    updatePlayerPool();
+  //  updatePlayerPool();
     updatePlayerCount();
-    loadPlayersFromJsonBin();
+    await loadPlayersFromJsonBin();
     console.log("System został zainicjalizowany"); // Debug
 });
 
