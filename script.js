@@ -39,16 +39,19 @@ async function loadPlayersFromJsonBin() {
             }
         });
         const data = await res.json();
-        system.playerPool = data.record.players || [];
+        system.playerPool = (data.record.players || []).map(player => {
+            return typeof player === 'string' ? { name: player } : player;
+        });
+
         updatePlayerPool();
         updatePlayerCount();
-        console.log("Wczytano graczy z JSONBin");
+
+        console.log("Wczytano graczy z JSONBin", system.playerPool);
     } catch (e) {
         console.error("Błąd ładowania z JSONBin:", e);
     }
-console.log("Lista graczy z JSONBin:", system.playerPool);
-	
 }
+
 
 async function savePlayersToJsonBin() {
     try {
@@ -59,7 +62,9 @@ async function savePlayersToJsonBin() {
                 'X-Master-Key': JSONBIN_API_KEY
             },
             body: JSON.stringify({
-                players: system.playerPool
+                players: system.playerPool.map(player => {
+                    return typeof player === 'string' ? { name: player } : player;
+                })
             })
         });
         console.log("Zapisano graczy do JSONBin");
@@ -67,6 +72,8 @@ async function savePlayersToJsonBin() {
         console.error("Błąd zapisu do JSONBin:", e);
     }
 }
+
+
 
 
 
