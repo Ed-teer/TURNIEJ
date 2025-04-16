@@ -46,6 +46,7 @@ async function loadPlayersFromJsonBin() {
     } catch (e) {
         console.error("Błąd ładowania z JSONBin:", e);
     }
+console.log("Lista graczy z JSONBin:", system.playerPool);
 	
 }
 
@@ -211,7 +212,8 @@ function updatePlayerPool() {
                 <input type="checkbox" 
                        onchange="toggleTournamentPlayer(${index})"
                        ${system.tournament.players.includes(player) ? 'checked' : ''}>
-                <span>${player}</span>
+           
+	      <span>${player.name}</span>
             </label>
             <button class="danger" onclick="removeFromPool(${index})">Usuń</button>
         `;
