@@ -46,6 +46,7 @@ async function loadPlayersFromJsonBin() {
     } catch (e) {
         console.error("Błąd ładowania z JSONBin:", e);
     }
+	
 }
 
 async function savePlayersToJsonBin() {
@@ -119,6 +120,7 @@ window.addToPlayerPool = function() {
 
 document.addEventListener("load", async function () {
     await loadPlayersFromJsonBin();
+	console.log("System został zainicjalizowany");
    });
 
 
