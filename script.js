@@ -917,17 +917,17 @@ function showPlayoffButton() {
 
 
 // Funkcje pomocnicze
-function savePlayersToJsonBin() {
-    try {
-        localStorage.setItem('tournamentSystem', JSON.stringify({
-            playerPool: system.playerPool,
-            tournament: system.tournament
-        }));
-        console.log("Zapisano do LocalStorage");
-    } catch (e) {
-        console.error("Błąd zapisu do LocalStorage:", e);
-    }
-}
+//function savePlayersToJsonBin() {
+//    try {
+ //       localStorage.setItem('tournamentSystem', JSON.stringify({
+ //           playerPool: system.playerPool,
+//            tournament: system.tournament
+//        }));
+//        console.log("Zapisano do LocalStorage");
+//    } catch (e) {
+//        console.error("Błąd zapisu do LocalStorage:", e);
+//    }
+//}
 
 function updateStatsAfterEdit(match, prevScore1, prevScore2) {
     // Pomijaj mecze play-off i wolne losy
