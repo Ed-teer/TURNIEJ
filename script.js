@@ -213,7 +213,7 @@ function updatePlayerPool() {
                        onchange="toggleTournamentPlayer(${index})"
                        ${system.tournament.players.includes(player) ? 'checked' : ''}>
            
-	      <span>${player.name}</span>
+	      <span>${player}</span>
             </label>
             <button class="danger" onclick="removeFromPool(${index})">Usuń</button>
         `;
