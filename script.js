@@ -8,6 +8,7 @@ const system = {
         allMatches: [],
         playerStats: {},
         playedPairs: new Set(),
+	  // playedPairs: Array.from(system.tournament.playedPairs)
         isActive: false,
         nextMatchId: 1
     }
@@ -28,55 +29,6 @@ const tournamentStatusEl = document.getElementById('tournamentStatus');
 const currentRoundInfoEl = document.getElementById('currentRoundInfo');
 const playerCountEl = document.getElementById('playerCount');
 const tournamentPlayerCountEl = document.getElementById('tournamentPlayerCount');
-const JSONBIN_ID = '67ff95358561e97a5000cbb8';
-const JSONBIN_API_KEY = '$2a$10$R9Xds/kGp2j227ZmP4AUjuFMDBShwrbpEOImJs7IKcud9btQmEZRO';
-
-async function loadPlayersFromJsonBin() {
-    try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-            headers: {
-                'X-Master-Key': JSONBIN_API_KEY
-            }
-        });
-        const data = await res.json();
-        system.playerPool = (data.record.players || []).map(player => {
-            return typeof player === 'string' ? { name: player } : player;
-        });
-
-        updatePlayerPool();
-        updatePlayerCount();
-
-        console.log("Wczytano graczy z JSONBin", system.playerPool);
-    } catch (e) {
-        console.error("Błąd ładowania z JSONBin:", e);
-    }
-console.log("Wczytani gracze po fetchu:", system.playerPool);	
-}
-
-
-async function savePlayersToJsonBin() {
-    try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_API_KEY
-            },
-            body: JSON.stringify({
-                players: system.playerPool.map(player => {
-                    return typeof player === 'string' ? { name: player } : player;
-                })
-            })
-        });
-        console.log("Zapisano graczy do JSONBin");
-    } catch (e) {
-        console.error("Błąd zapisu do JSONBin:", e);
-    }
-}
-
-
-
-
 
 // Funkcje pomocnicze
 function shuffleArray(array) {
@@ -112,26 +64,20 @@ window.addToPlayerPool = function() {
     system.playerPool.push(name);
     nameInput.value = "";
     
-  //  updatePlayerPool();
-  //  await savePlayersToJsonBin();
-  //  updatePlayerCount();
+    updatePlayerPool();
+    saveToLocalStorage();
+    updatePlayerCount();
 };
 
 
 
 
 // Inicjalizacja
-//document.addEventListener('DOMContentLoaded', function() {
- //   loadPlayersFromJsonBin();
-//    updatePlayerCount();
-//    updateTournamentPlayerCount();
-// });
-
-document.addEventListener("load", async function () {
-    await loadPlayersFromJsonBin();
-	console.log("System został zainicjalizowany");
-   });
-
+document.addEventListener('DOMContentLoaded', function() {
+    loadFromLocalStorage();
+    updatePlayerCount();
+    updateTournamentPlayerCount();
+});
 
 // Zarządzanie graczami
 
@@ -155,9 +101,8 @@ function addToPlayerPool() {
     system.playerPool.push(name);
     nameInput.value = "";
     
-    //updatePlayerPool();
-	await loadPlayersFromJsonBin();
-   await savePlayersToJsonBin();
+    updatePlayerPool();
+    saveToLocalStorage();
     updatePlayerCount();
 }
 
@@ -174,7 +119,7 @@ function updateTournamentPlayersList() {
         const playerElement = document.createElement('div');
         playerElement.className = 'player-item';
         playerElement.innerHTML = `
-           <span>${player}</span>
+            <span>${player}</span>
             <button class="warning" onclick="removeFromTournament(${index})">Usuń</button>
         `;
         container.appendChild(playerElement);
@@ -221,8 +166,7 @@ function updatePlayerPool() {
                 <input type="checkbox" 
                        onchange="toggleTournamentPlayer(${index})"
                        ${system.tournament.players.includes(player) ? 'checked' : ''}>
-           
-	      <span>${player}</span>
+                <span>${player}</span>
             </label>
             <button class="danger" onclick="removeFromPool(${index})">Usuń</button>
         `;
@@ -247,7 +191,7 @@ function removeFromPool(index) {
     
     system.playerPool.splice(index, 1);
     updatePlayerPool();
-    await savePlayersToJsonBin();
+    saveToLocalStorage();
     updatePlayerCount();
 }
 
@@ -264,7 +208,7 @@ function toggleTournamentPlayer(poolIndex) {
     updateTournamentPlayersList(); // Teraz ta funkcja istnieje
     updateTournamentPlayerCount();
     startBtnEl.disabled = system.tournament.players.length < 2;
-    await savePlayersToJsonBin();
+    saveToLocalStorage();
 }
 
 // Zarządzanie turniejem
@@ -288,6 +232,7 @@ function startTournament() {
     system.tournament.currentRound = 1;
     system.tournament.allMatches = [];
     system.tournament.playedPairs = new Set();
+   
     system.tournament.isActive = true;
     system.tournament.nextMatchId = 1;
 	system.tournament.allMatches.forEach(m => m.isPlayoff = false);
@@ -917,17 +862,17 @@ function showPlayoffButton() {
 
 
 // Funkcje pomocnicze
-//function savePlayersToJsonBin() {
-//    try {
- //       localStorage.setItem('tournamentSystem', JSON.stringify({
- //           playerPool: system.playerPool,
-//            tournament: system.tournament
-//        }));
-//        console.log("Zapisano do LocalStorage");
-//    } catch (e) {
-//        console.error("Błąd zapisu do LocalStorage:", e);
-//    }
-//}
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('tournamentSystem', JSON.stringify({
+            playerPool: system.playerPool,
+            tournament: system.tournament
+        }));
+        console.log("Zapisano do LocalStorage");
+    } catch (e) {
+        console.error("Błąd zapisu do LocalStorage:", e);
+    }
+}
 
 function updateStatsAfterEdit(match, prevScore1, prevScore2) {
     // Pomijaj mecze play-off i wolne losy
@@ -1004,7 +949,7 @@ function enableMatchEdit(globalIndex) {
 
 
 
-function loadPlayersFromJsonBin() {
+function loadFromLocalStorage() {
     try {
         const savedData = localStorage.getItem('tournamentSystem');
         if (savedData) {
@@ -1042,8 +987,8 @@ function updateTournamentPlayerCount() {
     document.getElementById('startBtn').addEventListener('click', startTournament);
     
 	document.getElementById('addPlayerBtn').addEventListener('click', addToPlayerPool);
-    await loadPlayersFromJsonBin();
-   // updatePlayerPool();
+    loadFromLocalStorage();
+    updatePlayerPool();
     updatePlayerCount();
 })
 
@@ -1071,9 +1016,11 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Inicjalizacja widoku
-  //  updatePlayerPool();
+    updatePlayerPool();
     updatePlayerCount();
-    await loadPlayersFromJsonBin();
+    
+	loadFromLocalStorage();
+
     console.log("System został zainicjalizowany"); // Debug
 });
 
