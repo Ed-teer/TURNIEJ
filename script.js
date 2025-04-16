@@ -112,9 +112,9 @@ window.addToPlayerPool = function() {
     system.playerPool.push(name);
     nameInput.value = "";
     
-    updatePlayerPool();
-    await savePlayersToJsonBin();
-    updatePlayerCount();
+  //  updatePlayerPool();
+  //  await savePlayersToJsonBin();
+  //  updatePlayerCount();
 };
 
 
