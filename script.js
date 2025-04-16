@@ -50,6 +50,7 @@ async function loadPlayersFromJsonBin() {
     } catch (e) {
         console.error("Błąd ładowania z JSONBin:", e);
     }
+console.log("Wczytani gracze po fetchu:", system.playerPool);	
 }
 
 
@@ -112,7 +113,7 @@ window.addToPlayerPool = function() {
     nameInput.value = "";
     
     updatePlayerPool();
-    saveToLocalStorage();
+    savePlayersToJsonBin();
     updatePlayerCount();
 };
 
@@ -121,7 +122,7 @@ window.addToPlayerPool = function() {
 
 // Inicjalizacja
 //document.addEventListener('DOMContentLoaded', function() {
- //   loadFromLocalStorage();
+ //   loadPlayersFromJsonBin();
 //    updatePlayerCount();
 //    updateTournamentPlayerCount();
 // });
@@ -245,7 +246,7 @@ function removeFromPool(index) {
     
     system.playerPool.splice(index, 1);
     updatePlayerPool();
-    saveToLocalStorage();
+    savePlayersToJsonBin();
     updatePlayerCount();
 }
 
@@ -262,7 +263,7 @@ function toggleTournamentPlayer(poolIndex) {
     updateTournamentPlayersList(); // Teraz ta funkcja istnieje
     updateTournamentPlayerCount();
     startBtnEl.disabled = system.tournament.players.length < 2;
-    saveToLocalStorage();
+    savePlayersToJsonBin();
 }
 
 // Zarządzanie turniejem
@@ -915,7 +916,7 @@ function showPlayoffButton() {
 
 
 // Funkcje pomocnicze
-function saveToLocalStorage() {
+function savePlayersToJsonBin() {
     try {
         localStorage.setItem('tournamentSystem', JSON.stringify({
             playerPool: system.playerPool,
@@ -1002,7 +1003,7 @@ function enableMatchEdit(globalIndex) {
 
 
 
-function loadFromLocalStorage() {
+function loadPlayersFromJsonBin() {
     try {
         const savedData = localStorage.getItem('tournamentSystem');
         if (savedData) {
@@ -1040,7 +1041,7 @@ function updateTournamentPlayerCount() {
     document.getElementById('startBtn').addEventListener('click', startTournament);
     
 	document.getElementById('addPlayerBtn').addEventListener('click', addToPlayerPool);
-    loadFromLocalStorage();
+    loadPlayersFromJsonBin();
     updatePlayerPool();
     updatePlayerCount();
 })
@@ -1071,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicjalizacja widoku
     updatePlayerPool();
     updatePlayerCount();
-    loadFromLocalStorage();
+    loadPlayersFromJsonBin();
     console.log("System został zainicjalizowany"); // Debug
 });
 
