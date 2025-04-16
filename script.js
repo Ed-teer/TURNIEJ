@@ -1016,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicjalizacja widoku
     updatePlayerPool();
     updatePlayerCount();
-    
+    loadFromLocalStorage();
     console.log("System został zainicjalizowany"); // Debug
 });
 
