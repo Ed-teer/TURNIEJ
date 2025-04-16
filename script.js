@@ -28,6 +28,45 @@ const tournamentStatusEl = document.getElementById('tournamentStatus');
 const currentRoundInfoEl = document.getElementById('currentRoundInfo');
 const playerCountEl = document.getElementById('playerCount');
 const tournamentPlayerCountEl = document.getElementById('tournamentPlayerCount');
+const JSONBIN_ID = '67ff95358561e97a5000cbb8';
+const JSONBIN_API_KEY = '$2a$10$R9Xds/kGp2j227ZmP4AUjuFMDBShwrbpEOImJs7IKcud9btQmEZRO';
+
+async function loadPlayersFromJsonBin() {
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
+            headers: {
+                'X-Master-Key': JSONBIN_API_KEY
+            }
+        });
+        const data = await res.json();
+        system.playerPool = data.record.players || [];
+        updatePlayerPool();
+        updatePlayerCount();
+        console.log("Wczytano graczy z JSONBin");
+    } catch (e) {
+        console.error("Błąd ładowania z JSONBin:", e);
+    }
+}
+
+async function savePlayersToJsonBin() {
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY
+            },
+            body: JSON.stringify({
+                players: system.playerPool
+            })
+        });
+        console.log("Zapisano graczy do JSONBin");
+    } catch (e) {
+        console.error("Błąd zapisu do JSONBin:", e);
+    }
+}
+
+
 
 // Funkcje pomocnicze
 function shuffleArray(array) {
@@ -72,11 +111,16 @@ window.addToPlayerPool = function() {
 
 
 // Inicjalizacja
-document.addEventListener('DOMContentLoaded', function() {
-    loadFromLocalStorage();
-    updatePlayerCount();
-    updateTournamentPlayerCount();
-});
+//document.addEventListener('DOMContentLoaded', function() {
+ //   loadFromLocalStorage();
+//    updatePlayerCount();
+//    updateTournamentPlayerCount();
+// });
+
+document.addEventListener("load", async function () {
+    await loadPlayersFromJsonBin();
+   });
+
 
 // Zarządzanie graczami
 
@@ -101,7 +145,7 @@ function addToPlayerPool() {
     nameInput.value = "";
     
     updatePlayerPool();
-    saveToLocalStorage();
+    savePlayersToJsonBin();
     updatePlayerCount();
 }
 
