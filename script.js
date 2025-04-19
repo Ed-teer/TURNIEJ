@@ -63,7 +63,7 @@ function addToPlayerPool() {
     
     if (system.playerPool.includes(name)) {
       //  alert("Ten gracz już istnieje!");
-        document.getElementById('newPlayerName').value = "";
+      //  document.getElementById('newPlayerName').value = "";
         return;
     }
     
