@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function addToPlayerPool() {
     const name = document.getElementById('newPlayerName').value.trim();
     
-    if (!name) {
+    if (!name===null) {
         alert("Wpisz nazwę gracza!");
         return;
     }
