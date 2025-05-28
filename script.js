@@ -62,8 +62,8 @@ function addToPlayerPool() {
     }
     
     if (system.playerPool.includes(name)) {
-      //  alert("Ten gracz już istnieje!");
-      //  document.getElementById('newPlayerName').value = "";
+        // alert("Ten gracz już istnieje!");
+        document.getElementById('newPlayerName').value = "";
         return;
     }
     
@@ -323,7 +323,125 @@ function resetTournament() {
 }
 
 // Generowanie meczów
+
 function generateAllRounds() {
+    const players = [...system.tournament.players];
+    const totalRounds = system.tournament.rounds;
+    const numPlayers = players.length;
+
+    system.tournament.allMatches = [];
+    system.tournament.playedPairs = new Set();
+    system.tournament.nextMatchId = 1;
+
+    // Zlicz planowane mecze i byes
+    const plannedMatches = {};
+    const byeCounts = {};
+    players.forEach(player => {
+        plannedMatches[player] = 0;
+        byeCounts[player] = 0;
+    });
+
+    for (let round = 1; round <= totalRounds; round++) {
+        const roundMatches = [];
+        const unpaired = [...players];
+        const usedThisRound = new Set();
+
+        // Jeśli liczba graczy nieparzysta – przydziel bye
+        if (unpaired.length % 2 !== 0) {
+            const eligible = unpaired.filter(p => byeCounts[p] < 1);
+            
+            if (eligible.length === 0) {
+                console.warn(`Runda ${round}: brak gracza bez byea — któryś dostanie drugi.`);
+                eligible.push(...unpaired); // dopuszczamy powtórzenia
+            }
+
+            const byePlayer = eligible[Math.floor(Math.random() * eligible.length)];
+            roundMatches.push({
+                id: system.tournament.nextMatchId++,
+                player1: byePlayer,
+                player2: null,
+                score1: 0,
+                score2: 0,
+                completed: false,
+                round: round,
+                isBye: true,
+                globalIndex: system.tournament.allMatches.length + roundMatches.length
+            });
+
+            plannedMatches[byePlayer]++;
+            byeCounts[byePlayer]++;
+            usedThisRound.add(byePlayer);
+            unpaired.splice(unpaired.indexOf(byePlayer), 1);
+        }
+
+        // Tasowanie dla losowości
+        shuffleArray(unpaired);
+
+        // Parowanie bez powtórek
+        while (unpaired.length >= 2) {
+            let pairFound = false;
+
+            for (let i = 0; i < unpaired.length; i++) {
+                for (let j = i + 1; j < unpaired.length; j++) {
+                    const p1 = unpaired[i];
+                    const p2 = unpaired[j];
+                    const pairKey = [p1, p2].sort().join('-');
+
+                    if (!system.tournament.playedPairs.has(pairKey)) {
+                        roundMatches.push({
+                            id: system.tournament.nextMatchId++,
+                            player1: p1,
+                            player2: p2,
+                            score1: 0,
+                            score2: 0,
+                            completed: false,
+                            round: round,
+                            isBye: false,
+                            pairKey: pairKey,
+                            globalIndex: system.tournament.allMatches.length + roundMatches.length
+                        });
+
+                        system.tournament.playedPairs.add(pairKey);
+                        plannedMatches[p1]++;
+                        plannedMatches[p2]++;
+                        usedThisRound.add(p1);
+                        usedThisRound.add(p2);
+
+                        unpaired.splice(j, 1);
+                        unpaired.splice(i, 1);
+                        pairFound = true;
+                        break;
+                    }
+                }
+                if (pairFound) break;
+            }
+
+            if (!pairFound) {
+                console.warn(`Runda ${round}: nie udało się sparować bez powtórki`);
+                break; // lub: spróbuj dopuścić powtórzenie, jeśli chcesz
+            }
+        }
+
+        system.tournament.allMatches.push(...roundMatches);
+    }
+
+    // ⚠️ Walidacja końcowa: każdy gracz powinien mieć X meczów
+    players.forEach(player => {
+        if (plannedMatches[player] !== totalRounds) {
+            console.warn(`${player} ma zaplanowane ${plannedMatches[player]} meczów (powinno być ${totalRounds})`);
+        }
+    });
+}
+
+
+
+
+
+
+
+
+
+/* function generateAllRounds() {
     const playersWithBye = new Set();
     
     for (let round = 1; round <= system.tournament.rounds; round++) {
@@ -386,7 +504,7 @@ function generateAllRounds() {
         
         system.tournament.allMatches.push(...roundMatches);
     }
-}
+} */
 
 
 function updateRanking() {
@@ -467,8 +585,32 @@ function updateTournamentView() {
             matchDiv.dataset.id = match.id;
             
             if (match.player2 === null) {
+				
+				 /* <p><strong>${match.player1}</strong> <span class="bye">(wolny los - wygrana 3:0)</span></p> */
                 matchDiv.innerHTML = `
-                    <p><strong>${match.player1}</strong> <span class="bye">(wolny los - wygrana 3:0)</span></p>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="billiard-ball" style="background: ${getPlayerColor(match.player1)}"></div>
+                        <strong>${match.player1}</strong>
+                        <span>vs</span>
+                        <strong>${'bye'}</strong>
+                        <div class="billiard-ball" style="background: ${getPlayerColor(match.player2)}"></div>
+                    </div>
+                    <div class="match-controls">
+                        <input type="number" min="0" max="3" 
+                            value="${match.score1}" 
+                            data-player="1"
+                            onchange="updateMatchScore(${match.globalIndex}, 1, this.value)" 
+                            ${match.completed ? 'disabled' : ''}>
+                        <span> - </span>
+                        <input type="number" min="0" max="3" 
+                            value="${match.score2}" 
+                            data-player="2"
+                            onchange="updateMatchScore(${match.globalIndex}, 2, this.value)" 
+                            ${match.completed ? 'disabled' : ''}>
+                        ${match.completed ? `
+                            <button class="edit-btn" onclick="enableMatchEdit(${match.globalIndex})">Edytuj</button>
+                        ` : ''}
+                    </div>
                 `;
             } else {
                 matchDiv.innerHTML = `
@@ -517,6 +659,51 @@ function saveToLocalStorage() {
 }
 
 function updateStatsAfterEdit(match, prevScore1, prevScore2) {
+    const stats = system.tournament.playerStats;
+    const { player1, player2 } = match;
+
+    // Odejmij poprzednie wyniki
+    if (player1) {
+        stats[player1].wonGames -= prevScore1;
+        stats[player1].totalGames -= (prevScore1 + (prevScore2 || 0));
+    }
+    if (player2) {
+        stats[player2].wonGames -= prevScore2;
+        stats[player2].totalGames -= (prevScore2 + prevScore1);
+    }
+
+    // Dodaj nowe wyniki
+    if (player1) {
+        stats[player1].wonGames += match.score1;
+        stats[player1].totalGames += match.score1 + (match.score2 || 0);
+    }
+    if (player2) {
+        stats[player2].wonGames += match.score2;
+        stats[player2].totalGames += match.score2 + match.score1;
+    }
+
+    // Aktualizuj liczbę meczy (gdy wynik się zmieni z nieukończonego na ukończony lub odwrotnie)
+    const wasCompleted = (prevScore1 === 3 || prevScore2 === 3);
+    const isCompleted = (match.score1 === 3 || match.score2 === 3);
+
+    if (wasCompleted && !isCompleted) {
+        if (player1) stats[player1].matches--;
+        if (player2) stats[player2].matches--;
+    } else if (!wasCompleted && isCompleted) {
+        if (player1) stats[player1].matches++;
+        if (player2) stats[player2].matches++;
+    }
+
+    // Specjalne traktowanie byea – liczymy go jako mecz
+    if (match.isBye && player1) {
+        stats[player1].byes = 1; // zakładamy max 1 bye
+    }
+}
+
+
+
+
+/* function updateStatsAfterEdit(match, prevScore1, prevScore2) {
     if (match.isBye) return;
 
     const { player1, player2 } = match;
@@ -549,7 +736,7 @@ function updateStatsAfterEdit(match, prevScore1, prevScore2) {
         stats[player1].matches++;
         stats[player2].matches++;
     }
-}
+} */
 
 function enableMatchEdit(globalIndex) {
     const match = system.tournament.allMatches[globalIndex];
@@ -603,6 +790,9 @@ function getTop12Players() {
 }
 
 
+
+
+
 function generatePlayoffBracket() {
     const topPlayers = getTop12Players(); // Zakładamy, że posortowani
     const totalPlayers = topPlayers.length;
@@ -647,17 +837,21 @@ function generatePlayoffBracket() {
     return bracket;
 }
 
+
 function displayPlayoffBracket(playoffBracket) {
     const container = document.getElementById('playoffContainer');
 
-    // 1. Zachowaj wcześniej wpisane wyniki
+    // 1. ZAPISZ aktualne wyniki
     const savedScores = {};
-    const inputs = container.querySelectorAll('input[type="number"]');
-    inputs.forEach(input => {
+    container.querySelectorAll('input[type="number"]').forEach(input => {
         savedScores[input.id] = input.value;
     });
 
-    container.innerHTML = ''; // Wyczyść stare drzewko
+    // 2. Wyczyść stare drzewko
+    container.innerHTML = '';
+    container.style.display = 'flex';
+    container.style.gap = '20px';
+    container.style.alignItems = 'flex-start';
 
     const createMatch = (round, index, player1, player2) => {
         const div = document.createElement('div');
@@ -670,6 +864,10 @@ function displayPlayoffBracket(playoffBracket) {
         const p1Score = document.createElement('input');
         p1Score.type = 'number';
         p1Score.id = `${round}_${index}_a`;
+        p1Score.classList.add('score-input');
+        if (savedScores[p1Score.id] !== undefined) {
+            p1Score.value = savedScores[p1Score.id];
+        }
 
         const vs = document.createElement('span');
         vs.textContent = ' vs ';
@@ -681,55 +879,65 @@ function displayPlayoffBracket(playoffBracket) {
         const p2Score = document.createElement('input');
         p2Score.type = 'number';
         p2Score.id = `${round}_${index}_b`;
+        p2Score.classList.add('score-input');
+        if (savedScores[p2Score.id] !== undefined) {
+            p2Score.value = savedScores[p2Score.id];
+        }
 
-        // Przywróć zapisane wyniki, jeśli są
-        if (savedScores[p1Score.id]) p1Score.value = savedScores[p1Score.id];
-        if (savedScores[p2Score.id]) p2Score.value = savedScores[p2Score.id];
-
-        div.appendChild(p1Name);
+        /* div.appendChild(p1Name);
         div.appendChild(p1Score);
         div.appendChild(vs);
         div.appendChild(p2Name);
+        div.appendChild(p2Score); */
+		
+		div.appendChild(p1Name);
+		div.appendChild(vs);
+		div.appendChild(p2Name);
+        div.appendChild(p1Score);        
         div.appendChild(p2Score);
+		
+		
+		
+		
+		
+		
 
         return div;
     };
 
-    const addRound = (title, roundData, roundKey) => {
-        const roundDiv = document.createElement('div');
-        roundDiv.classList.add('round');
-        const heading = document.createElement('h3');
-        heading.textContent = title;
-        roundDiv.appendChild(heading);
+    const addColumn = (title, roundData, roundKey) => {
+    const column = document.createElement('div');
+    column.classList.add('bracket-column');
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    column.appendChild(heading);
 
-        roundData.forEach((match, i) => {
-            const matchDiv = createMatch(roundKey, i, match[0], match[1]);
-            roundDiv.appendChild(matchDiv);
-        });
+    roundData.forEach((match, i) => {
+    const matchDiv = createMatch(roundKey, i, match[0], match[1]);
+    column.appendChild(matchDiv);
 
-        container.appendChild(roundDiv);
-    };
+    // Dodaj separator po każdym meczu
+    const separator = document.createElement('div');
+    separator.classList.add('match-separator');
+    column.appendChild(separator);
+});
 
-    // Baraże
-    addRound('Baraże', playoffBracket.roundOf12, 'roundOf12');
+    container.appendChild(column);
+};
 
-    // Ćwierćfinały
-    addRound('Ćwierćfinały', playoffBracket.quarterfinals, 'quarterfinals');
 
-    // Półfinały
-    playoffBracket.semifinals = playoffBracket.semifinals || [[], []];
-    addRound('Półfinały', playoffBracket.semifinals, 'semifinals');
 
-    // Finał
-    playoffBracket.final = playoffBracket.final || [];
-    if (playoffBracket.final.length !== 2) playoffBracket.final = [null, null];
-    addRound('Finał', [playoffBracket.final], 'final');
+    addColumn('Baraże', playoffBracket.roundOf12, 'roundOf12');
+    addColumn('Ćwierćfinały', playoffBracket.quarterfinals, 'quarterfinals');
+    addColumn('Półfinały', playoffBracket.semifinals || [[], []], 'semifinals');
 
-    // Mecz o 3. miejsce
-    playoffBracket.thirdPlace = playoffBracket.thirdPlace || [];
-    if (playoffBracket.thirdPlace.length !== 2) playoffBracket.thirdPlace = [null, null];
-    addRound('Mecz o 3. miejsce', [playoffBracket.thirdPlace], 'thirdPlace');
+    const final = playoffBracket.final || [null, null];
+    addColumn('Finał', [final.length === 2 ? final : [null, null]], 'final');
+
+    const thirdPlace = playoffBracket.thirdPlace || [null, null];
+    addColumn('Mecz o 3. miejsce', [thirdPlace.length === 2 ? thirdPlace : [null, null]], 'thirdPlace');
 }
+
 
 
 
@@ -754,6 +962,8 @@ document.getElementById('updatePlayoffBtn').addEventListener('click', () => {
         handlePlayoffResults(currentPlayoffBracket);
     }
 });
+
+
 
 function handlePlayoffResults(playoffBracket) {
     const getScore = (id) => {
