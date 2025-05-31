@@ -633,6 +633,14 @@ function updateTournamentView() {
     });
     
     for (const roundNum in rounds) {
+	    
+	if (matchesContainerEl.children.length > 0) {
+            const separator = document.createElement('hr');
+            separator.className = 'round-separator';
+            matchesContainerEl.appendChild(separator);
+        }
+
+	    
         const roundDiv = document.createElement('div');
         roundDiv.className = 'round';
         
