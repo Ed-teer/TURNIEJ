@@ -647,7 +647,7 @@ function updateTournamentView() {
         const roundTitle = document.createElement('div');
         roundTitle.className = 'round-title';
         roundTitle.textContent = `Runda ${roundNum}.   Do ${system.tournament.gameType} wygr.`;
-        
+        roundTitle.style.color = '#007bff';
         roundDiv.appendChild(roundTitle);
         
         rounds[roundNum].forEach(match => {
